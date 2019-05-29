@@ -1,3 +1,5 @@
+# Wildcard certificates from letsencrypt on aws cloud
+
 Letsencrypt is nowadays very popular certificates authority.
 
 It is standard defacto for most of situations when you need green sealed certificate on your environment.
@@ -12,7 +14,7 @@ Let's assume we want to create wildcard certificate for our staging environment
 
 `*.staging.yourdomain.com`
 
-## Step A
+## Step A - zone preparation for acme checks
 
 Create another public hosted zone for the domain `_acme-challenge.staging.yourdomain.com`
 I know, you are probably thinking "but that's not a domain!", but in the relevant sense,
@@ -29,7 +31,7 @@ ns-626.awsdns-14.net.
 ns-126.awsdns-15.com.
 ```
 
-## Step B
+## Step B -  delegating acme actions to dedicated acme hosted zone
 
 Return to your original hosted zone, and create a record for `_acme-challenge.staging.yourdomain.com` of type NS. As a value you will use to create this record use those 4 nameservers that Route 53 assigned to the new hosted zone, one per line.
 
@@ -41,7 +43,7 @@ You can now create a new record in the root of the new hosted zone, and when you
 
 Now, you can give your script permission only to modify records in the new zone, and it will be unable to modify anything in the parent zone, because you gave it no permissions, there. So we approaching to the next step
 
-## STEP C
+## STEP C - creating policy with limited access 
 
 Now we can prepare AWS policy with fine grained permissions
 
@@ -87,7 +89,6 @@ resource "aws_iam_policy" "allow_writing_acme_zone" {
   policy = "${data.aws_iam_policy_document.allow_writing_acme_zone.json}"
 }
 
-
 data "aws_iam_policy_document" "allow_writing_acme_zone" {
 
   statement {
@@ -97,11 +98,30 @@ data "aws_iam_policy_document" "allow_writing_acme_zone" {
   }
 
   statement {
-    actions   = [""route53:GetChange""]
+    actions   = ["route53:GetHostedZone"]
+    resources = ["arn:aws:route53:::hostedzone/${data.aws_route53_zone.acme.zone_id}"]
+    effect = "Allow"
+  }
+
+  statement {
+    actions   = ["route53:ListResourceRecordSets"]
+    resources = ["arn:aws:route53:::hostedzone/${data.aws_route53_zone.acme.zone_id}"]
+    effect = "Allow"
+  }
+
+  statement {
+    actions   = ["route53:ChangeResourceRecordSets"]
+    resources = ["arn:aws:route53:::hostedzone/${data.aws_route53_zone.acme.zone_id}"]
+    effect = "Allow"
+  }
+
+
+  statement {
+    actions   = ["route53:GetChange"]
     resources = ["*"]
     effect = "Allow"
   }
-  
+
   statement {
     actions   = ["route53:ListHostedZones"]
     resources = ["*"]
@@ -122,7 +142,7 @@ resource "aws_iam_user_policy_attachment" "acme-writer-policy" {
 
 ```
 
-## STEP D
+## STEP D - setting up aws credentials
 
 Setup AWS credentials
 We now need to put the AWS credentials on the server so the plugin can use them. 
@@ -153,9 +173,12 @@ aws sts get-caller-identity
 
 ```
 
-## STEP D
+Next step would be, naturally, generating cthe certificate
 
-Install tool of your choice, for example, `certbot` (examples below are given for ubuntu family)
+## Example - generating certificate with certbot
+
+
+Install tool of your choice, for example, classic `certbot` (examples below are given for ubuntu family)
 
 ```sh
 sudo apt-get update
@@ -201,8 +224,6 @@ Resetting dropped connection: route53.amazonaws.com
 Resetting dropped connection: acme-v02.api.letsencrypt.org
 ```
 
-## STEP E 
-
 Now let's ensure, that our domain will be prolonged
 
 ```sh
@@ -227,7 +248,66 @@ README  cert.pem  chain.pem  fullchain.pem  privkey.pem
 
 ```
 
-## STEP F
+## Example - generating certificate with acme.sh
 
-Use certificate in your webserver
+But my own preference is pure shell acme.sh
+
+Acme.sh  https://github.com/Neilpang/acme.sh - it is another extra cool tool written purely in shell.
+It supports number of dns providers in form of shell(!) plugins https://github.com/Neilpang/acme.sh/tree/master/dnsapi
+
+Each plugin has comprehensive documentation on configuring  https://github.com/Neilpang/acme.sh/wiki/dnsapi
+
+For Route53, you will need to export your credentials  
+
+```sh
+export  AWS_ACCESS_KEY_ID=XXXXXXXXXX
+export  AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXXXXX
+```
+
+With acme.sh
+
+```sh
+
+acme.sh --issue --dns dns_aws -d staging.yourdomain.com -d "*.staging.yourdomain.com"
+
+[середа, 29 травня 2019 19:58:01 +0200] Multi domain='DNS:staging.yourdomain.com,DNS:*.staging.yourdomain.com'
+[середа, 29 травня 2019 19:58:01 +0200] Getting domain auth token for each domain
+[середа, 29 травня 2019 19:58:03 +0200] Getting webroot for domain='staging.yourdomain.com'
+[середа, 29 травня 2019 19:58:03 +0200] Getting webroot for domain='*.staging.yourdomain.com'
+[середа, 29 травня 2019 19:58:03 +0200] Adding txt value: GvaPZqTUMceQVt8yFl4IkW0ZqJ22-680Du-7BLfTcVc for domain:  _acme-challenge.staging.yourdomain.com
+[середа, 29 травня 2019 19:58:04 +0200] Getting existing records for _acme-challenge.staging.yourdomain.com
+[середа, 29 травня 2019 19:58:05 +0200] TXT record updated successfully.
+[середа, 29 травня 2019 19:58:05 +0200] The txt record is added: Success.
+[середа, 29 травня 2019 19:58:05 +0200] Adding txt value: txy1JYnOGAWpT1rQ8_U99Ird-Pq-P0iWYzixGPPQIvw for domain:  _acme-challenge.staging.yourdomain.com
+[середа, 29 травня 2019 19:58:06 +0200] Getting existing records for _acme-challenge.staging.yourdomain.com
+[середа, 29 травня 2019 19:58:07 +0200] TXT record updated successfully.
+[середа, 29 травня 2019 19:58:07 +0200] The txt record is added: Success.
+[середа, 29 травня 2019 19:58:07 +0200] Let's check each dns records now. Sleep 20 seconds first.
+...
+[середа, 29 травня 2019 19:58:28 +0200] All success, let's return
+[середа, 29 травня 2019 19:58:28 +0200] Verifying: staging.yourdomain.com
+[середа, 29 травня 2019 19:58:31 +0200] Success
+[середа, 29 травня 2019 19:58:31 +0200] Verifying: *.staging.yourdomain.com
+[середа, 29 травня 2019 19:58:34 +0200] Success
+...
+[середа, 29 травня 2019 19:58:39 +0200] Your cert is in  /home/slavko/.acme.sh/staging.yourdomain.com/staging.yourdomain.com.cer 
+[середа, 29 травня 2019 19:58:39 +0200] Your cert key is in  /home/slavko/.acme.sh/staging.yourdomain.com/staging.yourdomain.com.key 
+[середа, 29 травня 2019 19:58:39 +0200] The intermediate CA cert is in  /home/slavko/.acme.sh/staging.yourdomain.com/ca.cer 
+[середа, 29 травня 2019 19:58:39 +0200] And the full chain certs is there:  /home/slavko/.acme.sh/staging.yourdomain.com/fullchain.cer 
+
+
+```
+
+Renewing is also straightforward - just create cron similar to 
+
+```txt
+0 0 * * * "/home/user/.acme.sh"/acme.sh --cron --home "/home/user/.acme.sh" > /dev/null
+```
+
+
+Ansible role assisting you with install on target server can be found here:  https://github.com/softasap/sa-acme-sh
+
+
+## Finally
+Use certificates in your webserver
 

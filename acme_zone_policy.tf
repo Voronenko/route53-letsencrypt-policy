@@ -14,6 +14,25 @@ data "aws_iam_policy_document" "allow_writing_acme_zone" {
   }
 
   statement {
+    actions   = ["route53:GetHostedZone"]
+    resources = ["arn:aws:route53:::hostedzone/${data.aws_route53_zone.acme.zone_id}"]
+    effect = "Allow"
+  }
+
+  statement {
+    actions   = ["route53:ListResourceRecordSets"]
+    resources = ["arn:aws:route53:::hostedzone/${data.aws_route53_zone.acme.zone_id}"]
+    effect = "Allow"
+  }
+
+  statement {
+    actions   = ["route53:ChangeResourceRecordSets"]
+    resources = ["arn:aws:route53:::hostedzone/${data.aws_route53_zone.acme.zone_id}"]
+    effect = "Allow"
+  }
+
+
+  statement {
     actions   = ["route53:GetChange"]
     resources = ["*"]
     effect = "Allow"
