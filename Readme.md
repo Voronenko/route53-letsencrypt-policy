@@ -24,7 +24,7 @@ Route 53 will assign 4 new nameservers to this new hosted zone. Make a note of t
 
 You will get something like
 
-```
+```txt
 ns-1918.awsdns-47.co.uk.
 ns-1211.awsdns-23.org.
 ns-626.awsdns-14.net.
@@ -47,7 +47,7 @@ Now, you can give your script permission only to modify records in the new zone,
 
 Now we can prepare AWS policy with fine grained permissions
 
-```
+```json
 {
 "Version": "2012-10-17",
 "Statement": [
@@ -152,7 +152,7 @@ your setup might be different.
 In the home folder create an .aws folder and inside that create a text file with the name 
 `credentials` with the following contents.
 
-```
+```txt
 [default]
 aws_access_key_id=XXXXXX
 aws_secret_access_key=XXXX/XXXXX
@@ -207,7 +207,7 @@ certbot certonly -d staging.yourdomain.com -d *.staging.yourdomain.com --dns-rou
 
 If you see output like below, you are done:
 
-```
+```txt
 Found credentials in shared credentials file: ~/.aws/credentials
 Plugins selected: Authenticator dns-route53, Installer None
 Starting new HTTPS connection (1): acme-v02.api.letsencrypt.org
