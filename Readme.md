@@ -303,10 +303,9 @@ Renewing is also straightforward - just create cron similar to
 0 0 * * * "/home/user/.acme.sh"/acme.sh --cron --home "/home/user/.acme.sh" > /dev/null
 ```
 
-
-Ansible role assisting you with install on target server can be found here:  https://github.com/softasap/sa-acme-sh
-
-
 ## Finally
 Use certificates in your webserver
 
+## Code
+Terraform snippets might be found at https://github.com/Voronenko/route53-letsencrypt-policy/ ;
+Ansible role assisting you with install on target server can be found here:  https://github.com/softasap/sa-acme-sh
