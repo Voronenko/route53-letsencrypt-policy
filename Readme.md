@@ -142,7 +142,7 @@ resource "aws_iam_user_policy_attachment" "acme-writer-policy" {
 
 ```
 
-## STEP D - setting up aws credentials
+## STEP D - setting up aws credentials (for certbot example)
 
 Setup AWS credentials
 We now need to put the AWS credentials on the server so the plugin can use them. 
@@ -176,7 +176,6 @@ aws sts get-caller-identity
 Next step would be, naturally, generating cthe certificate
 
 ## Example - generating certificate with certbot
-
 
 Install tool of your choice, for example, classic `certbot` (examples below are given for ubuntu family)
 
