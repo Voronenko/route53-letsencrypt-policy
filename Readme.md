@@ -2,10 +2,10 @@
 
 Letsencrypt is nowadays very popular certificates authority.
 
-It is standard defacto for most of situations when you need green sealed certificate on your environment.
+It is standard de-facto for most of situations when you need green sealed certificate on your environment.
 New version of the API (v2) provides very nice way to issue wildcard certificates using DNS validation.
 
-Althouth it is not recommended to put read/write dns credentials on a such environment, there might be
+Although it is not recommended to put read/write dns credentials on a such environment, there might be
 exception that forces you to do so on a temporary basis.
 
 Workaround below provides way to limit write scope of the credentials, when your domain is served by AWS Route53.
@@ -39,7 +39,7 @@ Important! Do not change any of the existing NS records in either of the zones.
 
 What we have implemented by this step is called a delegation -  i.e. you are delegating authority for `staging.yourdomain.com` subdomain to a different hosted zone, which you will notice was automatically assigned a completely different set of 4 Route 53 servers from those that handle your parent domain.
 
-You can now create a new record in the root of the new hosted zone, and when you do a DNS query for _acme-challenge.ldap.example.com, the answer returned will be the answer from the new hosted zone.
+You can now create a new record in the root of the new hosted zone, and when you do a DNS query for _acme-challenge.staging.yourdomain.com, the answer returned will be the answer from the new hosted zone.
 
 Now, you can give your script permission only to modify records in the new zone, and it will be unable to modify anything in the parent zone, because you gave it no permissions, there. So we approaching to the next step
 
@@ -173,7 +173,7 @@ aws sts get-caller-identity
 
 ```
 
-Next step would be, naturally, generating cthe certificate
+Next step would be, naturally, generating the certificate
 
 ## Example - generating certificate with certbot
 
